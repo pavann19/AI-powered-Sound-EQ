@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Downloaded/generated model & inference caches (re-fetched on first run)
+.tflite_cache/
+.tfhub_cache/
+
+# Local runtime data (per-machine, regenerated / grows over time)
+eq_cache.db
+preference_data.npz
+
+# Fingerprint binary is platform-specific; keep out unless you want it vendored
+# fpcalc.exe
+
+# Editor / OS cruft
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Scratch / unrelated
+Claude suggest/

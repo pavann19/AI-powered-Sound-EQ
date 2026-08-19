@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundIntelligence · Spatial Audio Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- SVG Optical Refraction & Chromatic Dispersion Filters -->
+    <svg class="liquid-svg-defs" aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;">
+        <defs>
+            <!-- Physical Glass Refraction Displacement -->
+            <filter id="liquid-glass-lens" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox">
+                <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+                <feGaussianBlur in="displaced" stdDeviation="0.4" result="blurred"/>
+                <feMerge>
+                    <feMergeNode in="blurred"/>
+                </feMerge>
+            </filter>
+
+            <!-- Chromatic Prism Edge Aberration -->
+            <filter id="liquid-prism" x="-10%" y="-10%" width="120%" height="120%">
+                <feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red"/>
+                <feOffset in="red" dx="1.2" dy="0" result="red-shift"/>
+                <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green"/>
+                <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue"/>
+                <feOffset in="blue" dx="-1.2" dy="0" result="blue-shift"/>
+                <feBlend in="red-shift" in2="green" mode="screen" result="rg"/>
+                <feBlend in="rg" in2="blue-shift" mode="screen"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- Interactive Liquid Dynamic Mesh Canvas -->
+    <canvas id="fluidMeshCanvas" class="fluid-mesh-canvas"></canvas>
+    <div class="glass-film-overlay"></div>
+    <div class="toast-hub" id="toast-container"></div>
+
+    <div class="apple-app-container">
+
+        <!-- Master Navigation / Dynamic Capsule -->
+        <header class="master-toolbar">
+            <div class="toolbar-brand">
+                <div class="brand-icon-wrap">
+                    <svg class="brand-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                        <path d="M2 10v4M6 6v12M10 3v18M14 7v10M18 5v14M22 10v4"/>
+                    </svg>
+                </div>
+                <div class="brand-meta">
+                    <span class="brand-name">Sound<span class="brand-gradient">Intelligence</span></span>
+                    <span class="brand-badge">STUDIO PRO</span>
+                </div>
+            </div>
+
+            <!-- Floating Dynamic Capsule with Apple Intelligence Shimmer -->
+            <div class="dynamic-capsule liquid-ai-shimmer" id="dynamic-capsule">
+                <div class="capsule-live-indicator" id="connection-beacon">
+                    <span class="pulse-dot"></span>
+                    <span class="live-label" id="connection-label">ENGINE READY</span>
+                </div>
+                <div class="capsule-divider"></div>
+                <div class="capsule-preset-slot" id="active-preset-chip">
+                    <span class="capsule-icon" id="chip-icon">🎧</span>
+                    <span class="capsule-preset-name" id="chip-name">Initializing Engine…</span>
+                </div>
+                <div class="capsule-divider"></div>
+                <div class="capsule-stats">
+                    <span class="tag-badge">WASAPI 16k</span>
+                    <span class="tag-badge accent" id="hw-target-badge">HW TARGET ON</span>
+                </div>
+            </div>
+
+            <div class="toolbar-actions">
+                <div class="fingerprint-indicator" id="fp-indicator">
+                    <span class="fp-pulse" id="fp-pulse"></span>
+                    <span class="fp-title" id="fp-title">Chromaprint AI</span>
+                    <span class="fp-chip" id="fp-chip">Ready</span>
+                </div>
+                <button class="mini-toggle-btn" id="btn-compact-toggle" title="Toggle Compact Dynamic Island Mode">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="16" height="16" rx="4"/>
+                        <path d="M9 9h6v6H9z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Spatial Stage -->
+        <div class="studio-layout">
+
+            <!-- Hero Stage: Spatial Acoustic Canvas -->
+            <section class="hero-stage">
+                <div class="hero-canvas-container">
+                    <canvas id="heroCanvas"></canvas>
+                    <div class="hero-center-hud">
+                        <div class="hud-halo" id="hud-halo"></div>
+                        <div class="hud-icon" id="center-icon">🎧</div>
+                        <div class="hud-detected-category" id="center-label">Acoustic Engine</div>
+                        <div class="hud-confidence-pill" id="center-confidence">Listening for system audio…</div>
+                    </div>
+                </div>
+
+                <div class="hero-status-strip">
+                    <div class="strip-item">
+                        <span class="strip-label">Acoustic Space</span>
+                        <span class="strip-value" id="strip-space">Dynamic Studio</span>
+                    </div>
+                    <div class="strip-item">
+                        <span class="strip-label">Calibration</span>
+                        <span class="strip-value green">Sony WH-CH720N (Active)</span>
+                    </div>
+                    <div class="strip-item">
+                        <span class="strip-label">Instant Recall</span>
+                        <span class="strip-value" id="strip-cache">Auto-Learning</span>
+                    </div>
+                    <div class="strip-item">
+                        <span class="strip-label">Dynamic EQ Rider</span>
+                        <span class="strip-value blue" id="strip-rider">Gain Riding (±3dB)</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dual Decks -->
+            <div class="decks-grid">
+
+                <!-- Deck 1: Neural Engine & Real-Time Spectrum -->
+                <section class="glass-deck neural-deck">
+                    <div class="deck-header">
+                        <div class="deck-title-group">
+                            <span class="deck-badge neural-badge">AI</span>
+                            <h3>Neural Acoustic Classifier</h3>
+                        </div>
+                        <span class="deck-subtitle">YAMNet 521-Class Taxonomy</span>
+                    </div>
+
+                    <div class="classifier-stack" id="predictions-stack">
+                        <!-- Class rows injected by JS -->
+                    </div>
+
+                    <div class="deck-divider"></div>
+
+                    <div class="deck-section-title">
+                        <span>Dynamic Multi-Band Gain Rider</span>
+                        <span class="sub-indicator">Real-Time Distortion Shield</span>
+                    </div>
+
+                    <div class="dynamic-meter-rack" id="dynamic-bars">
+                        <!-- Dynamic EQ bars injected by JS -->
+                    </div>
+
+                    <div class="deck-divider"></div>
+
+                    <div class="deck-section-title">
+                        <span>Profile Affinity Matrix</span>
+                        <span class="sub-indicator">Decision Confidence</span>
+                    </div>
+                    <div class="affinity-matrix" id="affinity-row">
+                        <!-- Affinity bars injected by JS -->
+                    </div>
+                </section>
+
+                <!-- Deck 2: Studio Parametric EQ Curve -->
+                <section class="glass-deck eq-deck">
+                    <div class="deck-header">
+                        <div class="deck-title-group">
+                            <span class="deck-badge eq-badge">DSP</span>
+                            <h3>Parametric Filter Matrix</h3>
+                        </div>
+                        <div class="eq-mode-pill" id="eq-profile-tag">Direct Kernel APO</div>
+                    </div>
+
+                    <div class="eq-screen-frame">
+                        <canvas id="eqCanvas"></canvas>
+                        <div class="eq-grid-labels">
+                            <span>20Hz</span>
+                            <span>100Hz</span>
+                            <span>500Hz</span>
+                            <span>2kHz</span>
+                            <span>8kHz</span>
+                            <span>20kHz</span>
+                        </div>
+                    </div>
+
+                    <div class="hardware-tuning-banner">
+                        <div class="hw-icon-circle">🎧</div>
+                        <div class="hw-text-group">
+                            <div class="hw-banner-title">Hardware Neutralizer Active</div>
+                            <div class="hw-banner-desc">Correcting 150Hz bass boom, 2kHz dip & 7kHz treble spike.</div>
+                        </div>
+                        <div class="hw-toggle-state active">LOCKED</div>
+                    </div>
+
+                    <div class="deck-divider"></div>
+
+                    <!-- Session Activity Log -->
+                    <div class="deck-section-title">
+                        <span>Acoustic Session Timeline</span>
+                        <span class="event-counter" id="event-count">0 events</span>
+                    </div>
+                    <div class="session-timeline" id="timeline-scroll">
+                        <div class="timeline-empty-state" id="timeline-empty">
+                            <span>Audio stream monitor standing by…</span>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Master Floating Control Dock (Apple Liquid Glass Architecture) -->
+            <footer class="master-dock">
+                <!-- Upper Layer: Floating Liquid Glass Mini-Player -->
+                <div class="dock-miniplayer-pill" id="dock-miniplayer">
+                    <div class="miniplayer-art-wrap">
+                        <span class="miniplayer-art-icon" id="mini-art-icon">🎧</span>
+                        <div class="miniplayer-art-wave">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="miniplayer-meta">
+                        <span class="miniplayer-title" id="mini-title">SoundIntelligence DSP</span>
+                        <span class="miniplayer-artist" id="mini-subtitle">Adaptive Spatial Neural Engine</span>
+                    </div>
+                    <div class="miniplayer-controls">
+                        <button class="miniplayer-btn" id="btn-toggle-engine" title="Toggle DSP Bypass">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                        <button class="miniplayer-btn" id="btn-next-preset" title="Cycle Next Acoustic Preset">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lower Layer: Concentric Liquid Glass Tab Bar + Satellite Button -->
+                <div class="dock-lower-group">
+                    <nav class="dock-tabbar-pill" id="mode-control">
+                        <button class="dock-tab-item active" data-value="auto">
+                            <div class="tab-icon-wrap">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                            </div>
+                            <span class="tab-label">Auto AI</span>
+                        </button>
+                        <!-- Injected preset tabs -->
+                    </nav>
+
+                    <!-- Satellite Circular Liquid Glass Button -->
+                    <button class="dock-satellite-btn" id="apply-btn" title="Sync Studio Configuration">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                    </button>
+                </div>
+            </footer>
+
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

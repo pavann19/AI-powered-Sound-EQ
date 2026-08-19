@@ -1,0 +1,18 @@
+# Audio capture & analysis
+soundcard>=0.4.3
+numpy>=1.24
+scipy>=1.11.0
+
+# Neural audio classification (YAMNet, running on the LiteRT/TFLite
+# interpreter -- see ml_analyzer.py for why this replaced full tensorflow +
+# tensorflow-hub: same model, ~18MB dependency instead of ~600MB, imports in
+# well under a second instead of tens of seconds)
+ai-edge-litert>=2.1.0
+
+# Native Windows desktop UI (Qt 6)
+PySide6>=6.6.0
+
+# Optional: local track fingerprint cache.
+# Also needs Chromaprint's fpcalc binary on PATH (bundled here as fpcalc.exe).
+# The app runs fine without this -- fingerprint_cache degrades gracefully.
+pyacoustid>=1.2.0
