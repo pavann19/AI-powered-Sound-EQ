@@ -10,6 +10,7 @@ __pycache__/
 # Local runtime data (per-machine, regenerated / grows over time)
 eq_cache.db
 preference_data.npz
+ab_test_results.json
 
 # Fingerprint binary is platform-specific; keep out unless you want it vendored
 # fpcalc.exe

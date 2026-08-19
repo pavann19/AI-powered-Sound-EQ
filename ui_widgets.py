@@ -718,6 +718,8 @@ class BypassToggle(QWidget):
         self._bypassed = False
         self._knob_x = 2.0
         self._knob_target = 2.0
+        self._locked = False
+        self._lock_reason = ""
 
     def is_bypassed(self) -> bool:
         return self._bypassed
@@ -731,6 +733,15 @@ class BypassToggle(QWidget):
             self._knob_x = self._knob_target
         self.update()
 
+    def set_locked(self, locked: bool, reason: str = ""):
+        """Disable manual interaction -- used while the blind A/B test owns
+        bypass control, so a stray click here can't fight its round timer."""
+        if locked != self._locked:
+            self._locked = locked
+            self._lock_reason = reason
+            self.setCursor(Qt.ArrowCursor if locked else Qt.PointingHandCursor)
+            self.update()
+
     def on_tick(self, dt: float):
         if abs(self._knob_x - self._knob_target) > 0.4:
             self._knob_x = _lerp(self._knob_x, self._knob_target, 0.3)
@@ -739,6 +750,8 @@ class BypassToggle(QWidget):
             self._knob_x = self._knob_target
 
     def mousePressEvent(self, e):
+        if self._locked:
+            return
         self._bypassed = not self._bypassed
         self._knob_target = (self.width() / 2) if self._bypassed else 2.0
         self.toggled.emit(self._bypassed)
@@ -747,6 +760,8 @@ class BypassToggle(QWidget):
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
+        if self._locked:
+            p.setOpacity(0.55)
 
         r = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
         path = QPainterPath()

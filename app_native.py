@@ -33,6 +33,8 @@ from ui_widgets import (
 from win_backdrop import apply_backdrop, supports_mica, BACKDROP_MICA_ALT
 from eq_presets import PRESETS
 from preference_model import MIN_SAMPLES as PREF_MIN_SAMPLES
+from ab_test import ABTestSession
+from ab_test_window import ABTestWindow, RatingButton
 
 APP_NAME = "SoundIntelligence"
 
@@ -174,6 +176,8 @@ class MainWindow(QMainWindow):
         self._mica = False
         self._last_tick = time.perf_counter()
         self._quitting = False
+        self.ab_test_session = None
+        self.ab_test_window = None
 
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(make_app_icon())
@@ -193,6 +197,12 @@ class MainWindow(QMainWindow):
         self.bypass_toggle = BypassToggle()
         self.bypass_toggle.toggled.connect(self.on_bypass_toggled)
         header_row.addWidget(self.bypass_toggle, stretch=0, alignment=Qt.AlignVCenter)
+
+        self.ab_test_btn = RatingButton("Blind Test", T.ACCENT)
+        self.ab_test_btn.setFixedWidth(110)
+        self.ab_test_btn.set_on_click(self.open_ab_test_window)
+        header_row.addWidget(self.ab_test_btn, stretch=0, alignment=Qt.AlignVCenter)
+
         outer.addLayout(header_row)
 
         self.spectrum = SpectrumWidget()
@@ -278,6 +288,16 @@ class MainWindow(QMainWindow):
         # YAMNet; apply whatever they landed on now that there's a processor.
         if self.bypass_toggle.is_bypassed():
             processor.set_bypass(True)
+        self.ab_test_session = ABTestSession(processor)
+
+    def open_ab_test_window(self):
+        if not self.ab_test_session:
+            return  # engine still loading -- nothing to test against yet
+        if self.ab_test_window is None:
+            self.ab_test_window = ABTestWindow(self.ab_test_session, self)
+        self.ab_test_window.show()
+        self.ab_test_window.raise_()
+        self.ab_test_window.activateWindow()
 
     def on_engine_failed(self, err: str):
         self.titlebar.set_status(f"Engine failed: {err}", False)
@@ -318,6 +338,8 @@ class MainWindow(QMainWindow):
         # The backend is the source of truth (it may have been toggled before
         # the GUI's own toggle existed, or diverge if the state is stale).
         self.bypass_toggle.set_bypassed(bypassed, animate=False)
+        ab_active = bool(self.ab_test_session and self.ab_test_session.active)
+        self.bypass_toggle.set_locked(ab_active, "Blind test running" if ab_active else "")
 
         if silent:
             self.spectrum.set_classification("Silent", "No audio on the output device", 0.0)
