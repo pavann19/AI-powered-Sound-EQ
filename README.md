@@ -48,6 +48,22 @@ mutation happens on the GUI thread.
    Or double-click `Launch_SoundIntelligence.bat` to start it silently in the
    tray with no console window.
 
+5. **Optional: install shortcuts**
+   ```
+   python install_shortcuts.py
+   ```
+   Creates a Desktop shortcut and a Start Menu entry (so Windows Search can
+   find it), both pointing at `pythonw.exe app_native.py` with a real icon.
+   `python autostart_manager.py --enable` (or the tray menu's "Start with
+   Windows" toggle) adds the same shortcut to the Startup folder.
+
+   These all launch via a `.lnk` shortcut through `shortcuts.py`, deliberately
+   *not* through `wscript.exe`/VBScript. On the machine this was built on,
+   wscript-spawned child processes were silently blocked by AV/EDR — the
+   script "succeeded" with no error, but the app never actually started. If
+   `Start with Windows` still doesn't work on yours, check `Autostart Error`
+   output from running `autostart_manager.py --enable` directly in a console.
+
 First launch downloads YAMNet's `.tflite` model and class map (~16MB total)
 into `.tflite_cache/`; subsequent launches load from disk and work offline.
 Classification runs on the LiteRT (TFLite) interpreter rather than full

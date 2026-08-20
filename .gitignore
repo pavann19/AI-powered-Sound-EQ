@@ -12,6 +12,10 @@ eq_cache.db
 preference_data.npz
 ab_test_results.json
 
+# Generated icon -- rebuild with generate_icon.py rather than tracking the
+# binary; keeps diffs clean if the artwork changes.
+SoundIntelligence.ico
+
 # Fingerprint binary is platform-specific; keep out unless you want it vendored
 # fpcalc.exe
 
